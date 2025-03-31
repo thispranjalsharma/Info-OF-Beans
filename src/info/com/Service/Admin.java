@@ -48,13 +48,16 @@ public class Admin {
             while (isRunning) {
                 System.out.println("\n1. Teacher");
                 System.out.println("2. Student");
-                System.out.println("3. Exit");
+                System.out.println("3.  🔙 Back");
+                System.out.println("4.  STOP");
+
                 int choice = parseIntInput("choice");
 
                 switch (choice) {
                     case 1 -> handleTeacherSection();
                     case 2 -> handleStudentSection();
                     case 3 -> isRunning = false;
+                    case 4 -> System.exit(101);
                     default -> System.out.println("Invalid choice!");
                 }
             }
@@ -68,6 +71,7 @@ public class Admin {
     private void handleTeacherSection() throws SQLException {
         boolean isTeacherSectionRunning = true;
         while (isTeacherSectionRunning) {
+            System.out.println("-----------You to do Following this with Teacher ---------\n");
             System.out.println("\nTeacher Section:");
             System.out.println("1. Add Teacher");
             System.out.println("2. Retrieve Teachers");
@@ -97,7 +101,7 @@ public class Admin {
                 daoo.AddTeacher(new TeacherModel(tname, tNum, tex));
                 System.out.println("Teacher added successfully!");
             } catch (SQLException e) {
-//                System.out.println("Error saving teacher: " + e.getMessage());
+                System.out.println("Error saving teacher: " + e.getMessage());
             }
         }
     }
@@ -162,6 +166,8 @@ public class Admin {
     private void handleStudentSection() throws SQLException {
         boolean isStudentSectionRunning = true;
         while (isStudentSectionRunning) {
+            System.out.println("-----------You to do Following this with Student ---------\n");
+
             System.out.println("\nStudent Section:");
             System.out.println("1. Add Student");
             System.out.println("2. Retrieve Students");
@@ -172,7 +178,7 @@ public class Admin {
             switch (sChoice) {
                 case 1 -> addStudents();
                 case 2 -> retrieveStudents();
-//                case 3 -> findStudent();
+                case 3 -> findStudent();
                 case 4 -> isStudentSectionRunning = false;
                 default -> System.out.println("Invalid choice!");
             }
@@ -213,7 +219,22 @@ public class Admin {
         }
     }
 
-    // For student search
+
+    private void findStudent() {
+        System.out.println("Entre the name of Student to Search :");
+        String name = sc.nextLine().trim();
+
+        try {
+            if (!findStudentByName(name)) {
+                System.out.println("No students found with name: " + name);
+            } else {
+                findStudentByName(name);
+            }
+        } catch (SQLException e) {
+            System.out.println("Error searching students: " + e.getMessage());
+        }
+        // For student search
+    }
 
 
     // Utility methods for input handling

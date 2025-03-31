@@ -1,8 +1,7 @@
 package info.com.Service;
 
 import info.com.Dao.Daoo;
-import info.com.Model.StudentModel;
-import info.com.Model.TeacherModel;
+import info.com.Model.AssignmentModel;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -16,7 +15,7 @@ public class Student {
         this.daoo = new Daoo();
     }
 
-    public void sweets(){
+    public void sweets() {
         System.out.println("Welcome to the Student Section");
 
         try {
@@ -42,52 +41,124 @@ public class Student {
 
             boolean isRunning = true;
             while (isRunning) {
-                System.out.println("\n1. Soft Skill ");
-                System.out.println("2.Technical ");
-                System.out.println("3.Exit");
+                System.out.println("\n1. View Assignments ");
+//                System.out.println("2.not working now ");
+                System.out.println("2.🔙 Back");
+                System.out.println("3. STOP ");
                 int choice = parseIntInput("choice");
 
                 switch (choice) {
-                    case 1 -> handleTechnicalSection();
-                    case 2 -> handleSoftSkillSection();
-                    case 3 -> isRunning = false;
+                    case 1 -> handleAssignmentView();
+//                    case 2 -> handleTechnicalSection();
+                    case 2 -> isRunning = false;
+                    case 3 -> System.exit(1000003);
                     default -> System.out.println("Invalid choice!");
                 }
             }
-            System.out.println("Exiting Admin Section...");
+            System.out.println("Exiting Student  Section...");
         } catch (Exception e) {
             System.out.println("An unexpected error occurred: " + e.getMessage());
         }
     }
 
-    private void handleSoftSkillSection() {
+//    private void handleSoftSkillSection() {
+//        try {
+//            List<TeacherModel> assign = daoo.getAssignementOfSoftSkill(new TeacherModel("soft"));
+//            if (assign.isEmpty()) {
+//                System.out.println("No students found.");
+//            } else {
+//                System.out.println("\nStudent List:");
+//                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+std.gettAssignment() +" | "+ std.gettTime() ) );
+//            }
+//        } catch (SQLException e) {
+//            System.out.println("Error retrieving students: " + e.getMessage());
+//        }
+//    }
+//
+//    private void handleTechnicalSection() throws SQLException {
+//        try {
+//            List<TeacherModel> assign = daoo.getAssignementOfTechnical(new TeacherModel("Technical" ));
+//            if (assign.isEmpty()) {
+//                System.out.println("No students found.");
+//            } else {
+//                System.out.println("\nStudent List:");
+//                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+  std.gettAssignment()+" | "+ std.gettTime()));
+//            }
+//        } catch (SQLException e) {
+//            System.out.println("Error retrieving students: " + e.getMessage());
+//        }
+//    }
+
+
+    private void handleAssignmentView() {
+        System.out.println("\nView Assignments by Subject:");
+        System.out.println("1. Technical (Computer Science)");
+        System.out.println("2. Soft Skills");
+        System.out.println("3. Back");
+        System.out.print("Enter your choice: ");
+
+        int choice;
         try {
-            List<TeacherModel> assign = daoo.getAssignementOfSoftSkill(new TeacherModel("soft"));
-            if (assign.isEmpty()) {
-                System.out.println("No students found.");
-            } else {
-                System.out.println("\nStudent List:");
-                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+std.gettAssignment() +" | "+ std.gettTime() ) );
+            choice = Integer.parseInt(sc.nextLine());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input! Please enter a number.");
+            return;
+        }
+
+        switch (choice) {
+            case 1 -> viewTechnicalAssignments();
+            case 2 -> viewSoftSkillAssignments();
+            case 3 -> {
+                return;
             }
-        } catch (SQLException e) {
-            System.out.println("Error retrieving students: " + e.getMessage());
+            default -> System.out.println("Invalid choice!");
         }
     }
 
-    private void handleTechnicalSection() throws SQLException {
+    private void viewTechnicalAssignments() {
         try {
-            List<TeacherModel> assign = daoo.getAssignementOfTechnical(new TeacherModel("Technical" ));
-            if (assign.isEmpty()) {
-                System.out.println("No students found.");
-            } else {
-                System.out.println("\nStudent List:");
-                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+  std.gettAssignment()+" | "+ std.gettTime()));
-            }
+            List<AssignmentModel> assignments = daoo.getAssignmentsBySubject("Computer science");
+            displayAssignments(assignments, "Technical Assignments");
         } catch (SQLException e) {
-            System.out.println("Error retrieving students: " + e.getMessage());
+            System.out.println("Error retrieving assignments: " + e.getMessage());
         }
     }
 
+    private void viewSoftSkillAssignments() {
+        try {
+            List<AssignmentModel> assignments = daoo.getAssignmentsBySubject("soft");
+            displayAssignments(assignments, "Soft Skill Assignments");
+        } catch (SQLException e) {
+            System.out.println("Error retrieving assignments: " + e.getMessage());
+        }
+    }
+
+    private void displayAssignments(List<AssignmentModel> assignments, String title) {
+        if (assignments.isEmpty()) {
+            System.out.println("No assignments found for this subject.");
+            return;
+        }
+
+        System.out.println("\n" + title);
+        System.out.println("-----------------------------------------------------------------------------------------------");
+        System.out.printf("%-5s %-40s %-20s %s%n", "ID", "Assignment", "Teacher", "Date Posted");
+        System.out.println("-----------------------------------------------------------------------------------------------");
+
+        for (AssignmentModel assignment : assignments) {
+            System.out.printf("%-5d %-40s %-20s ",
+                    assignment.getId(),
+                    truncate(assignment.getAssignment(), 40),
+                    assignment.getTeacherName(),
+                    assignment.getCreatedAt());
+            System.out.println();
+        }
+
+        System.out.println();
+    }
+
+    private String truncate(String str, int length) {
+        return str.length() > length ? str.substring(0, length - 3) + "..." : str;
+    }
 
     // Utility methods for input handling
     private int parseIntInput(String prompt) {

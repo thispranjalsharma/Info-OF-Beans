@@ -32,6 +32,13 @@ public class Teacher {
                 System.out.print("Enter the password: ");
                 String password = sc.nextLine().trim();
 
+                // In your service layer
+                if (daoo.authenticateTeacher(name, password)) {
+                    System.out.println("Login successful!");
+                } else {
+                    System.out.println("Invalid credentials");
+                }
+
                 try {
                     if (daoo.Teacher(name, password)) {
                         authenticated = true;
@@ -47,18 +54,22 @@ public class Teacher {
             boolean isRunning = true;
             while (isRunning) {
                 System.out.println("\n1. Student");
-                System.out.println("2.   Add Assignment ");
-                System.out.println("3.   Exit");
+                System.out.println("2. Add Assignment ");
+                System.out.println("3. 🔙 Back");
+                System.out.println("4. STOP ");
+
                 int choice = parseIntInput("choice");
 
                 switch (choice) {
                     case 1 -> handleStudentSection();
                     case 2 -> handleAssignmentSection();
                     case 3 -> isRunning = false;
+                    case 4 -> System.exit(1000002);
+
                     default -> System.out.println("Invalid choice!");
                 }
             }
-            System.out.println("Exiting Admin Section...");
+            System.out.println("Exiting Teacher  Section...");
         } catch (Exception e) {
             System.out.println("An unexpected error occurred: " + e.getMessage());
         }
@@ -69,10 +80,10 @@ public class Teacher {
         boolean isStudentSectionRunning = true;
         while (isStudentSectionRunning) {
             System.out.println("\nStudent Section:");
-            System.out.println("1. Add Student");
-            System.out.println("2. Retrieve Students");
-            System.out.println("3. Find Student");
-            System.out.println("4. 🔙 Back");
+//            System.out.println("1. Add Student");
+            System.out.println("1. Retrieve Students");
+            System.out.println("2. Find Student");
+            System.out.println("3. 🔙 Back");
             int sChoice = parseIntInput("choice");
 
             switch (sChoice) {
@@ -115,7 +126,7 @@ public class Teacher {
                 findStudentByName(name);
             }
         } catch (SQLException e) {
-            System.out.println("Error searching students: " + e.getMessage());
+//            System.out.println("Error searching students: " + e.getMessage());
         }
     }
 
@@ -123,10 +134,15 @@ public class Teacher {
     private void handleAssignmentSection() throws SQLException {
         System.out.println("Please Entre the Assignment");
         String hw = sc.nextLine();
-        addAssignment(new TeacherModel(hw));
+//        addAssignment(new TeacherModel(hw));
+
+        try {
+            daoo.addAssignment(new TeacherModel(hw));
+            System.out.println("Assignment added successfully!");
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
-
-
 
     // Utility methods for input handling
     private int parseIntInput(String prompt) {
