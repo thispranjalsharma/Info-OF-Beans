@@ -8,18 +8,18 @@ public class StudentModel {
     private String sNum;
     private String sPassword;
 
-    public StudentModel ( int sId,String sName, String sNum, String sAssignment ){
+    public StudentModel (int sId, String sName, String sNum, String sAssignment){
         this.sId = sId;
         this.sName= sName;
         this.sNum = sNum;
         this.sAssignment=sAssignment;
+//        this.sPassword = sPassword;
     }
 
     public StudentModel( String sName, String sPassword ){
         this.sName= sName;
         this.sPassword = sPassword;
     }
-
 
     //    setter for the student section
     public void setsId(int sId) {

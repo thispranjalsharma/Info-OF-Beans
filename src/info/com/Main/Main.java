@@ -16,7 +16,7 @@ public class Main {
 
         boolean flag = true;
         while (flag) {
-            System.out.println("Welcome to the Info-of-Beans 😊🙂");
+            System.out.println("Welcome to the InfoBeans 😊🙂");
             System.out.println("1. Admin login");
             System.out.println("2. Teacher login");
             System.out.println("3. Student login");
@@ -36,10 +36,10 @@ public class Main {
                     admin.aDMin();
                     break;
                 case 2:
-                    teacher.teach();
+                    teacher.startTeacherSession();
                     break;
                 case 3:
-                    student.sweets();
+                    student.startStudentSession();
                     break;
                 case 4:
                     System.out.println("Exiting the system. Goodbye!");

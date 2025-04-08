@@ -6,40 +6,75 @@ import info.com.Model.StudentModel;
 import info.com.Model.TeacherModel;
 
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class Daoo {
+    // Database configuration
     private static final String URL = "jdbc:mysql://localhost:3306/infobeansMS";
-    private static final String user = "root";
-    private static final String password = "root";
-
+    private static final String USER = "root";
+    private static final String PASSWORD = "root";
     private static Connection con;
+
+    // Session management
+    private static int currentTeacherId = 0;
+    private static String currentTeacherExpertise = "";
+    private static boolean isTeacherAuthenticated = false;
+    public static int currentStudentId = 0;
+    private static boolean isStudentAuthenticated = false;
 
     static {
         try {
-            con = DriverManager.getConnection(URL, user, password);
+            con = DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (SQLException e) {
-            System.out.println("Not connected to database ");
-            System.out.println(e.getMessage());
+            handleException("Database connection failed", e);
         }
     }
 
-    public static boolean Admin(Integer id, String password) throws SQLException {
-        String query = "select * from admin where id =" + id + " and password = '" + password + "'";
-        PreparedStatement pst = con.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
-        boolean right = false;
-        if (rs.next()) {
-            right = true;
+    // ADMIN OPERATIONS
+    public boolean adminLogin(int id, String password) {
+        String query = "SELECT * FROM admin WHERE id = ? AND password = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setInt(1, id);
+            pst.setString(2, password);
+            try (ResultSet rs = pst.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            handleException("Admin login failed", e);
+            return false;
         }
-        return right;
+    }
+
+    // Generic exception handler
+    private static void handleException(String message, Exception e) {
+        System.err.println(message + ": " + e.getMessage());
+        e.printStackTrace();
     }
 
 
-    //  Admin Panel
+    // TEACHER OPERATIONS
+    public boolean teacherLogin(String name, String password) {
+        String query = "SELECT id, experties FROM addTeacher WHERE name = ? AND password = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setString(1, name);
+            pst.setString(2, password);
+
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    currentTeacherId = rs.getInt("id");
+                    currentTeacherExpertise = rs.getString("experties");
+                    isTeacherAuthenticated = true;
+                    return true;
+                }
+                return false;
+            }
+        } catch (SQLException e) {
+            handleException("Teacher login failed", e);
+            return false;
+        }
+    }
+
     public static void AddTeacher(TeacherModel teacher) throws SQLException {
         String query = "insert into addTeacher( name, mobilenum,experties )values (?,?,?)";
         PreparedStatement pst = con.prepareStatement(query);
@@ -47,7 +82,7 @@ public class Daoo {
         pst.setString(2, teacher.getTmobileNum());
         pst.setString(3, teacher.gettExperties());
         pst.executeUpdate();
-        System.out.println("Teacher Add...");
+//        System.out.println("Teacher Add...");
     }
 
     public List<TeacherModel> getAllTeacher() throws SQLException {
@@ -69,31 +104,26 @@ public class Daoo {
         return teacher;
     }
 
-    public static boolean findTeacherByName(String name) throws SQLException {
-        String query = "select * from addteacher where name='" + name + "'";
-        PreparedStatement pst = con.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
-        boolean userFound = false;
-        if (rs.next()) {
-            userFound = true;
-            System.out.println(rs.getInt(1)
-                    + " | " + rs.getString(2)
-                    + " | " + rs.getString(3)
-                    + " | " + rs.getString(4)
-                    + " | " + rs.getString(5)
-                    + " | " + rs.getString(6)
-                    + " | " + rs.getTimestamp(7)
-            );
+    // STUDENT OPERATIONS
+    public boolean studentLogin(String name, String password) {
+        String query = "SELECT id FROM addStudent WHERE name = ? AND password = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setString(1, name);
+            pst.setString(2, password);
+
+            try (ResultSet rs = pst.executeQuery()) {
+                if (rs.next()) {
+                    currentStudentId = rs.getInt("id");
+                    isStudentAuthenticated = true;
+                    return true;
+                }
+                return false;
+            }
+        } catch (SQLException e) {
+            handleException("Student login failed", e);
+            return false;
         }
-
-//        List<Modelss> teacher = new ArrayList<>();
-//        while (rs.next()){
-//            teacher.add(new Modelss(rs.getString(1), rs.getInt(2) ,rs.getString(3),rs.getString(4)));
-//        }
-
-        return userFound;
     }
-
 
     public static void AddStudent(Modelss modelss) throws SQLException {
         String query = "insert into addStudent( name, num )values ( ?,?)";
@@ -114,177 +144,191 @@ public class Daoo {
             int id = rs.getInt(1);
             String name = rs.getString(2);
             String assignment = rs.getString(3);
-            String num = rs.getString(4);
+//            String password = rs.getString(4);
+            String num = rs.getString(5);
 //            String  password = rs.getString(5);
-            student.add(new StudentModel(id, name, num, assignment));
+            student.add(new StudentModel(id, name, assignment, num));
         }
         return student;
     }
 
-    public static boolean findStudentByName(String name) throws SQLException {
-        String query = "select * from addStudent where name='" + name + "'";
-        PreparedStatement pst = con.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
-
-        boolean userFound = false;
-
-        if (rs.next()) {
-            userFound = true;
-            System.out.println(rs.getInt(1) + " | " + rs.getString(2) + " | " + rs.getString(3) + " | " + rs.getString(4));
-        }
-        return userFound;
-    }
-
-
-    // Teacher session information (should ideally be in a session manager class)
-    private static int currentTeacherId = 0;
-    private static String currentTeacherExpertise = "";
-    private static boolean isTeacherAuthenticated = false;
-
-
-    static String tname = "";
-    static String tpassword = "";
-
-    // Teacher Panel
-    public boolean Teacher(String name, String password) throws SQLException {
-        this.tname = name;
-        this.tpassword = password;
-
-        String query = "select * from addTeacher where name ='" + name + "' and password = '" + password + "'";
-        PreparedStatement pst = con.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
-        boolean right = false;
-        if (rs.next()) {
-            right = true;
-        }
-        return right;
-    }
-
-
-    // Teacher Authentication
-    public boolean authenticateTeacher(String name, String password) throws SQLException {
-        String query = "SELECT id, experties FROM addTeacher WHERE name = ? AND password = ?";
+    public List<StudentModel> findStudentByName(String name) throws SQLException {
+        String query = "SELECT * FROM addStudent WHERE name LIKE ?";
+        List<StudentModel> students = new ArrayList<>();
 
         try (PreparedStatement pst = con.prepareStatement(query)) {
-            pst.setString(1, name);
-            pst.setString(2, password);
+            pst.setString(1, "%" + name + "%"); // Using LIKE for partial matches
 
             try (ResultSet rs = pst.executeQuery()) {
-                if (rs.next()) {
-                    currentTeacherId = rs.getInt("id");
-                    currentTeacherExpertise = rs.getString("experties");
-                    isTeacherAuthenticated = true;
-                    return true;
+                while (rs.next()) {
+                    students.add(new StudentModel(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("num"),
+                            rs.getString("assignment")
+                    ));
                 }
             }
         }
-        return false;
+        return students;
     }
 
-    // Add Assignment with proper authentication check
-    public static void addAssignment(TeacherModel teacherModel) throws SQLException {
-        if (!isTeacherAuthenticated) {
-            throw new SQLException("Teacher not authenticated. Please login first.");
-        }
-
-        String query = "INSERT INTO assignment (assignment, subject, teacher_id) VALUES (?, ?, ?)";
+    public List<TeacherModel> findTeacherByName(String name) throws SQLException {
+        String query = "SELECT * FROM addteacher WHERE name LIKE ?";
+        List<TeacherModel> teachers = new ArrayList<>();
 
         try (PreparedStatement pst = con.prepareStatement(query)) {
-            pst.setString(1, teacherModel.gettAssignment());
-            pst.setString(2, currentTeacherExpertise);
-            pst.setInt(3, currentTeacherId);
+            pst.setString(1, "%" + name + "%"); // Using LIKE for partial matches
 
-            int rowsAffected = pst.executeUpdate();
-
-            if (rowsAffected == 0) {
-                throw new SQLException("Failed to add assignment");
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    teachers.add(new TeacherModel(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("mobileNum"),
+                            rs.getString("experties")
+//                            rs.getString("createDate")
+                    ));
+                }
             }
         }
+        return teachers;
     }
 
-//    // Teacher Logout
-//    public void teacherLogout() {
-//        currentTeacherId = 0;
-//        currentTeacherExpertise = "";
-//        isTeacherAuthenticated = false;
-//    }
+    public boolean updateStudentPassword(String newPassword) {
+        if (!isStudentAuthenticated) return false;
 
-    public boolean Student(String name, String password) throws SQLException {
-        this.tname = name;
-        this.tpassword = password;
-
-        String query = "select * from addStudent where name ='" + name + "' and password = '" + password + "'";
-        PreparedStatement pst = con.prepareStatement(query);
-        ResultSet rs = pst.executeQuery();
-        boolean right = false;
-        if (rs.next()) {
-            right = true;
+        String query = "UPDATE addStudent SET password = ? WHERE id = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setString(1, newPassword);
+            pst.setInt(2, currentStudentId);
+            int rows = pst.executeUpdate();
+            return rows > 0;
+        } catch (SQLException e) {
+            handleException("Password update failed", e);
+            return false;
         }
-        return right;
     }
 
-//    public List<TeacherModel> getAssignementOfTechnical(TeacherModel teacherModel) throws SQLException {
-//        String query = "select * from assignment where subject = 'Computer science' ";
-//        PreparedStatement pst = con.prepareStatement(query);
-//        ResultSet rs = pst.executeQuery();
-//        List <TeacherModel> list= new ArrayList<>();
-//        boolean right = false;
-//        while (rs.next()) {
-//            String asMent = rs.getString(1);
-//            list.add(new TeacherModel(asMent));
-//        }
-//        return list;
-//    }
-//
-//
-//    public List<TeacherModel> getAssignementOfSoftSkill(TeacherModel teacherModel) throws SQLException {
-//        String query = "select * from assignment where subject = 'soft' ";
-//        PreparedStatement pst = con.prepareStatement(query);
-//        ResultSet rs = pst.executeQuery();
-//        List <TeacherModel> list= new ArrayList<>();
-//        boolean right = false;
-//        while (rs.next()) {
-//            String asMent = rs.getString(1);
-//            list.add(new TeacherModel(asMent));
-//        }
-//        return list;
-//    }
+    // ASSIGNMENT OPERATIONS
+    public boolean addAssignment(TeacherModel assignment) {
+        if (!isTeacherAuthenticated) return false;
 
+        String query = "INSERT INTO assignment (assignment, subject, teacher_id) VALUES (?, ?, ?)";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setString(1, assignment.gettAssignment());
+            pst.setString(2, currentTeacherExpertise);
+            pst.setInt(3, currentTeacherId);
+            return pst.executeUpdate() > 0;
+        } catch (SQLException e) {
+            handleException("Assignment creation failed", e);
+            return false;
+        }
+    }
 
-    public List<AssignmentModel> getAssignmentsBySubject(String subject) throws SQLException {
+    public List<AssignmentModel> getAssignmentsByTeacher(int teacherId) throws SQLException {
+        String query = "SELECT a.id, a.assignment, a.created_at " +
+                "FROM assignment a " +
+                "WHERE a.teacher_id = ?";
+
+        List<AssignmentModel> assignments = new ArrayList<>();
+
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setInt(1, teacherId);
+
+            try (ResultSet rs = pst.executeQuery()) {
+                while (rs.next()) {
+                    assignments.add(new AssignmentModel(
+                            rs.getInt("id"),
+                            rs.getString("assignment"),
+                            rs.getTimestamp("created_at"),
+                            "" // Teacher name not needed here
+                    ));
+                }
+            }
+        }
+        return assignments;
+    }
+
+    public int getCurrentTeacherId() {
+        return isTeacherAuthenticated ? currentTeacherId : 0;
+    }
+
+    // DATA RETRIEVAL
+    public List<AssignmentModel> getAssignmentsBySubject(String subject) {
+        List<AssignmentModel> assignments = new ArrayList<>();
         String query = "SELECT a.id, a.assignment, a.created_at, t.name " +
                 "FROM assignment a " +
                 "JOIN addTeacher t ON a.teacher_id = t.id " +
                 "WHERE a.subject = ?";
 
-        List<AssignmentModel> assignments = new ArrayList<>();
-
         try (PreparedStatement pst = con.prepareStatement(query)) {
             pst.setString(1, subject);
 
             try (ResultSet rs = pst.executeQuery()) {
-
                 while (rs.next()) {
-                    String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                            .format(rs.getTimestamp("created_at"));
                     assignments.add(new AssignmentModel(
-
                             rs.getInt("id"),
                             rs.getString("assignment"),
-
-                            formattedDate,
+                            rs.getTimestamp("created_at"),
                             rs.getString("name")
                     ));
                 }
             }
+        } catch (SQLException e) {
+            handleException("Failed to retrieve assignments", e);
+        }
+        return assignments;
+    }
 
-
+    public boolean updateAssignmentStatus(int studentId, String status) throws SQLException {
+        // Validate status first
+        if (!isValidStatus(status)) {
+            throw new IllegalArgumentException("Invalid status value");
         }
 
-        return assignments;
+        String query = "UPDATE addstudent SET assignment = ? WHERE id = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setString(1, status);
+            pst.setInt(2, studentId);
+            return pst.executeUpdate() > 0;
+        }
+    }
 
-
+    private boolean isValidStatus(String status) {
+        return status != null &&
+                (status.equals("Not Started") ||
+                        status.equals("In Progress") ||
+                        status.equals("Completed"));
     }
 
 
+    public int getCurrentStudentId() {
+        if (isStudentAuthenticated) {
+            return currentStudentId;
+        }
+        return 0; // or throw an exception if preferred
+    }
+
+    public String getAssignmentStatus(int studentId) throws SQLException {
+        String query = "SELECT assignment FROM addstudent WHERE id = ?";
+        try (PreparedStatement pst = con.prepareStatement(query)) {
+            pst.setInt(1, studentId);
+            try (ResultSet rs = pst.executeQuery()) {
+                return rs.next() ? rs.getString("assignment") : "Not Found";
+            }
+        }
+    }
+
+    // UTILITY METHODS
+    public void teacherLogout() {
+        currentTeacherId = 0;
+        currentTeacherExpertise = "";
+        isTeacherAuthenticated = false;
+    }
+
+    public void studentLogout() {
+        currentStudentId = 0;
+        isStudentAuthenticated = false;
+    }
 }

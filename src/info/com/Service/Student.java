@@ -4,95 +4,75 @@ import info.com.Dao.Daoo;
 import info.com.Model.AssignmentModel;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Scanner;
 
 public class Student {
     private final Scanner sc = new Scanner(System.in);
-    private final Daoo daoo;
+    private final Daoo studentDao;
+    private int currentStudentId = 0;
 
     public Student() {
-        this.daoo = new Daoo();
+        this.studentDao = new Daoo();
     }
 
-    public void sweets() {
-        System.out.println("Welcome to the Student Section");
-
-        try {
-            boolean authenticated = false;
-            while (!authenticated) {
-                System.out.print("Enter the name : ");
-                String name = sc.nextLine().trim();
-
-                System.out.print("Enter the password: ");
-                String password = sc.nextLine().trim();
-
-                try {
-                    if (daoo.Student(name, password)) {
-                        authenticated = true;
-                    } else {
-                        System.out.println("❌❌ Wrong ID or Password. Try again.");
-                    }
-                } catch (SQLException e) {
-                    System.out.println("Database error during authentication: " + e.getMessage());
-                    return;
-                }
-            }
-
-            boolean isRunning = true;
-            while (isRunning) {
-                System.out.println("\n1. View Assignments ");
-//                System.out.println("2.not working now ");
-                System.out.println("2.🔙 Back");
-                System.out.println("3. STOP ");
-                int choice = parseIntInput("choice");
-
-                switch (choice) {
-                    case 1 -> handleAssignmentView();
-//                    case 2 -> handleTechnicalSection();
-                    case 2 -> isRunning = false;
-                    case 3 -> System.exit(1000003);
-                    default -> System.out.println("Invalid choice!");
-                }
-            }
-            System.out.println("Exiting Student  Section...");
-        } catch (Exception e) {
-            System.out.println("An unexpected error occurred: " + e.getMessage());
+    public void startStudentSession() {
+        System.out.println("\n🎓 STUDENT PORTAL 🎓");
+        if (authenticateStudent()) {
+            showStudentMenu();
         }
     }
 
-//    private void handleSoftSkillSection() {
-//        try {
-//            List<TeacherModel> assign = daoo.getAssignementOfSoftSkill(new TeacherModel("soft"));
-//            if (assign.isEmpty()) {
-//                System.out.println("No students found.");
-//            } else {
-//                System.out.println("\nStudent List:");
-//                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+std.gettAssignment() +" | "+ std.gettTime() ) );
-//            }
-//        } catch (SQLException e) {
-//            System.out.println("Error retrieving students: " + e.getMessage());
-//        }
-//    }
-//
-//    private void handleTechnicalSection() throws SQLException {
-//        try {
-//            List<TeacherModel> assign = daoo.getAssignementOfTechnical(new TeacherModel("Technical" ));
-//            if (assign.isEmpty()) {
-//                System.out.println("No students found.");
-//            } else {
-//                System.out.println("\nStudent List:");
-//                assign.forEach(std -> System.out.println(std.gettId()+1+" | "+  std.gettAssignment()+" | "+ std.gettTime()));
-//            }
-//        } catch (SQLException e) {
-//            System.out.println("Error retrieving students: " + e.getMessage());
-//        }
-//    }
+    private boolean authenticateStudent() {
+        System.out.print("\nEnter your name: ");
+        String name = sc.nextLine().trim();
+
+        System.out.print("Enter your password: ");
+        String password = sc.nextLine().trim();
+
+        if (studentDao.studentLogin(name, password)) {
+            currentStudentId = studentDao.getCurrentStudentId();
+            System.out.println("\n✅ Login successful! Welcome, " + name + "!");
+            return true;
+        } else {
+            System.out.println("\n❌ Invalid credentials!");
+            return false;
+        }
+    }
+
+    private void showStudentMenu() {
+        boolean continueSession = true;
+
+        while (continueSession) {
+            System.out.println("\n📋 STUDENT MENU 📋");
+            System.out.println("\n1. View Assignments ");
+            System.out.println("2. 📝 Update Assignment Status");
+//            System.out.println("3. 👀 View My Status");
+            System.out.println("3.Update Password");
+            System.out.println("4. 🚪 Logout");
+
+            int choice = getIntInput("Enter your choice", 1, 5);
+
+            switch (choice) {
+
+                case 1 -> handleAssignmentView();
+                case 2 -> updateAssignmentStatus();
+//                case 3 -> viewMyStatus();
+                case 3 -> handleUpdatePassword();
+                case 4 -> {
+                    studentDao.studentLogout();
+                    System.out.println("\n👋 Logged out successfully!");
+                    continueSession = false;
+                }
+            }
+        }
+    }
 
 
     private void handleAssignmentView() {
         System.out.println("\nView Assignments by Subject:");
-        System.out.println("1. Technical (Computer Science)");
+        System.out.println("1. Technical ");
         System.out.println("2. Soft Skills");
         System.out.println("3. Back");
         System.out.print("Enter your choice: ");
@@ -115,22 +95,63 @@ public class Student {
         }
     }
 
-    private void viewTechnicalAssignments() {
+
+    private void handleUpdatePassword() {
+        System.out.println("Entre Your new Password. ");
+        String newPassword = sc.nextLine();
+        if (newPassword != "") {
+            studentDao.updateStudentPassword(newPassword);
+            System.out.println("Your Password Updated Successfully ✅");
+
+        } else {
+            System.out.println("Do not be Over Smart .. ❌❌");
+        }
+
+    }
+
+    private void updateAssignmentStatus() {
+        System.out.println("\n📝 UPDATE ASSIGNMENT STATUS");
+        System.out.println("1. Not Started");
+        System.out.println("2. In Progress");
+        System.out.println("3. Completed");
+
+        int choice = getIntInput("Select your status", 1, 3);
+        String status = switch (choice) {
+            case 1 -> "Not Started";
+            case 2 -> "In Progress";
+            case 3 -> "Completed";
+            default -> "Not Started";
+        };
+
         try {
-            List<AssignmentModel> assignments = daoo.getAssignmentsBySubject("Computer science");
-            displayAssignments(assignments, "Technical Assignments");
+            if (studentDao.updateAssignmentStatus(currentStudentId, status)) {
+                System.out.println("\n✅ Status updated to: " + status);
+            } else {
+                System.out.println("\n❌ Failed to update status");
+            }
         } catch (SQLException e) {
-            System.out.println("Error retrieving assignments: " + e.getMessage());
+            System.out.println("\n❌ Database error: " + e.getMessage());
         }
     }
 
+//    private void viewMyStatus() {
+//        try {
+//            String status = studentDao.getAssignmentStatus(currentStudentId);
+//            System.out.println("\n📊 YOUR ASSIGNMENT STATUS");
+//            System.out.println("Current Status: " + getStatusEmoji(status) + " " + status);
+//        } catch (SQLException e) {
+//            System.out.println("\n❌ Database error: " + e.getMessage());
+//        }
+//    }
+
+    private void viewTechnicalAssignments() {
+        List<AssignmentModel> assignments = studentDao.getAssignmentsBySubject("Technical");
+        displayAssignments(assignments, "Technical Assignments");
+    }
+
     private void viewSoftSkillAssignments() {
-        try {
-            List<AssignmentModel> assignments = daoo.getAssignmentsBySubject("soft");
-            displayAssignments(assignments, "Soft Skill Assignments");
-        } catch (SQLException e) {
-            System.out.println("Error retrieving assignments: " + e.getMessage());
-        }
+        List<AssignmentModel> assignments = studentDao.getAssignmentsBySubject("soft skills");
+        displayAssignments(assignments, "Soft Skill Assignments");
     }
 
     private void displayAssignments(List<AssignmentModel> assignments, String title) {
@@ -141,56 +162,47 @@ public class Student {
 
         System.out.println("\n" + title);
         System.out.println("-----------------------------------------------------------------------------------------------");
-        System.out.printf("%-5s %-40s %-20s %s%n", "ID", "Assignment", "Teacher", "Date Posted");
+        System.out.printf("%-5s %-40s %-20s%n", "ID", "Assignment", "Teacher", "DATE CREATED");
         System.out.println("-----------------------------------------------------------------------------------------------");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM yyyy HH:mm");
 
         for (AssignmentModel assignment : assignments) {
-            System.out.printf("%-5d %-40s %-20s ",
+            String formattedDate = dateFormat.format(assignment.getCreatedAt());
+
+            System.out.printf("%-5d %-40s %-20s%n",
                     assignment.getId(),
                     truncate(assignment.getAssignment(), 40),
                     assignment.getTeacherName(),
-                    assignment.getCreatedAt());
-            System.out.println();
+                    formattedDate
+            );
         }
 
-        System.out.println();
+        System.out.println("-----------------------------------------------------------------------------------------------");
     }
 
     private String truncate(String str, int length) {
         return str.length() > length ? str.substring(0, length - 3) + "..." : str;
     }
 
-    // Utility methods for input handling
-    private int parseIntInput(String prompt) {
+    private String getStatusEmoji(String status) {
+        return switch (status) {
+            case "Completed" -> "✅";
+            case "In Progress" -> "⏳";
+            case "Not Started" -> "🛑";
+            default -> "❓";
+        };
+    }
+
+    private int getIntInput(String prompt, int min, int max) {
         while (true) {
             try {
-                System.out.print("Enter your " + prompt + ": ");
-                return Integer.parseInt(sc.nextLine());
+                System.out.print(prompt + " (" + min + "-" + max + "): ");
+                int value = Integer.parseInt(sc.nextLine());
+                if (value >= min && value <= max) return value;
+                System.out.println("Please enter between " + min + " and " + max);
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter a valid number.");
+                System.out.println("Invalid input! Please enter a number.");
             }
         }
     }
-
-    private int getPositiveIntInput(String message) {
-        while (true) {
-            int value = parseIntInput(message);
-            if (value > 0) {
-                return value;
-            }
-            System.out.println("Please enter a positive number.");
-        }
-    }
-
-    private String getValidContact(String prompt) {
-        while (true) {
-            System.out.print(prompt + ": ");
-            String input = sc.nextLine().trim();
-            if (!input.isEmpty() && input.length() >= 10) {
-                return input;
-            }
-            System.out.println("Invalid contact! Must be at least 10 characters.");
-        }
-    }
-
 }

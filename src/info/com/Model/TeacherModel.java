@@ -10,14 +10,21 @@ public class TeacherModel {
     private String tAssignment;
     private String tTime;
 
+    public TeacherModel(){
 
+    }
 
+    public TeacherModel(int tId,String tname, String tmobileNum,String tExperties){
+        this.tId=tId;
+        this.tname = tname;
+        this.tmobileNum = tmobileNum;
+        this.tExperties = tExperties;
+    }
     public TeacherModel(String tname, String tmobileNum,String tExperties){
         this.tname = tname;
         this.tmobileNum = tmobileNum;
         this.tExperties = tExperties;
     }
-
     public TeacherModel(String tAssignment){
         this.tAssignment=tAssignment;
     }

@@ -5,11 +5,10 @@ import info.com.Model.Modelss;
 import info.com.Model.StudentModel;
 import info.com.Model.TeacherModel;
 
+import java.io.Console;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Scanner;
-
-import static info.com.Dao.Daoo.findStudentByName;
 
 
 public class Admin {
@@ -22,7 +21,10 @@ public class Admin {
 
 
     public void aDMin() {
+        System.out.println("-----------------------------------------------------------------------");
         System.out.println("Welcome to the Admin Section");
+        System.out.println("-----------------------------------------------------------------------");
+        Console console = System.console();
         try {
             boolean authenticated = false;
             while (!authenticated) {
@@ -32,15 +34,11 @@ public class Admin {
                 System.out.print("Enter the password: ");
                 String password = sc.nextLine().trim();
 
-                try {
-                    if (daoo.Admin(id, password)) {
-                        authenticated = true;
-                    } else {
-                        System.out.println("❌❌ Wrong ID or Password. Try again.");
-                    }
-                } catch (SQLException e) {
-                    System.out.println("Database error during authentication: " + e.getMessage());
-                    return;
+
+                if (daoo.adminLogin(id, password)) {
+                    authenticated = true;
+                } else {
+                    System.out.println("❌❌ Wrong ID or Password. Try again.");
                 }
             }
 
@@ -71,7 +69,8 @@ public class Admin {
     private void handleTeacherSection() throws SQLException {
         boolean isTeacherSectionRunning = true;
         while (isTeacherSectionRunning) {
-            System.out.println("-----------You to do Following this with Teacher ---------\n");
+            System.out.println();
+            System.out.println("-----------------You have Following Operation in  Teacher ---------\n");
             System.out.println("\nTeacher Section:");
             System.out.println("1. Add Teacher");
             System.out.println("2. Retrieve Teachers");
@@ -89,13 +88,14 @@ public class Admin {
         }
     }
 
+
     private void addTeachers() {
-        int n = getPositiveIntInput("Enter number of teachers to add: ");
+        int n = getPositiveIntInput("Enter number of teachers to add: \n ");
         for (int i = 0; i < n; i++) {
             System.out.print("Enter Teacher Name: " + (i + 1) + ":");
             String tname = sc.nextLine().trim();
             String tNum = getValidContact("Contact Number");
-            System.out.print("Enter Expertise : ");
+            System.out.print("Enter Expertise (Soft Skill  / Technical / All Rounder ) : ");
             String tex = sc.nextLine().trim();
             try {
                 daoo.AddTeacher(new TeacherModel(tname, tNum, tex));
@@ -105,6 +105,7 @@ public class Admin {
             }
         }
     }
+
 
     private void retrieveTeachers() {
         try {
@@ -121,51 +122,50 @@ public class Admin {
                                 teach.gettTime() + " | "
 
                 ));
+                System.out.println("\n");
             }
         } catch (SQLException e) {
             System.out.println("Error retrieving teachers: " + e.getMessage());
         }
     }
 
-    // For teacher search
-    private void findTeacher() {
 
-        System.out.print("Entre the name of teacher to Search : ");
-        String name = sc.nextLine();
+    private void findTeacher() {
+        System.out.print("\n🔍 Enter Teacher name to search: ");
+        String name = sc.nextLine().trim();
 
         try {
-            if (!daoo.findTeacherByName(name)) {
-                System.out.println("No teachers found with name: \" + name");
+            List<TeacherModel> results = daoo.findTeacherByName(name);
+
+            if (results.isEmpty()) {
+                System.out.println("\nℹ️ No Teacher found with name: " + name);
             } else {
-                int c = 0;
-                System.out.println(c++);
-                daoo.findTeacherByName(name);
+                System.out.println("\n🔎 SEARCH RESULTS");
+                System.out.println("---------------------------------------------------------");
+                System.out.printf("%-5s %-20s %-15s %-30s%n", "ID", "Name", "Contact", "Expertise");
+                System.out.println("---------------------------------------------------------");
+
+                results.forEach(teacher ->
+                                System.out.printf("%-5d %-20s %-15s %-30s%n",
+                                        teacher.gettId(),
+                                        teacher.getTname(),
+                                        teacher.getTmobileNum(),
+                                        teacher.gettExperties())
+//                                truncate(teacher.gettTime(), 30))
+                );
+                System.out.println("\n");
             }
         } catch (SQLException e) {
-            System.out.println("Error searching teachers: " + e.getMessage());
+            System.out.println("\n❌ Error searching Teacher: " + e.getMessage());
         }
-
-
-//        System.out.print("Enter teacher name: ");
-//        String name = sc.nextLine().trim();
-//        try {
-//            List<Modelss> results = daoo.findTeacherByName(name);
-//            if (results.isEmpty()) {
-//                System.out.println("No teachers found with name: " + name);
-//            } else {
-//                System.out.println("\nFound Teachers:");
-//                results.forEach(t -> System.out.println(
-//                        t.gettId() + " | " + t.getTname() + " | " +
-//                                t.getTmobileNum() + " | " + t.gettExperties()));
-//            }
-//        } catch (SQLException e) {
-//            System.out.println("Error searching teachers: " + e.getMessage());
-//        }
     }
 
-    private void handleStudentSection() throws SQLException {
+
+    private void handleStudentSection() {
         boolean isStudentSectionRunning = true;
         while (isStudentSectionRunning) {
+
+            System.out.println();
             System.out.println("-----------You to do Following this with Student ---------\n");
 
             System.out.println("\nStudent Section:");
@@ -178,12 +178,13 @@ public class Admin {
             switch (sChoice) {
                 case 1 -> addStudents();
                 case 2 -> retrieveStudents();
-                case 3 -> findStudent();
+                case 3 -> searchStudent();
                 case 4 -> isStudentSectionRunning = false;
                 default -> System.out.println("Invalid choice!");
             }
         }
     }
+
 
     private void addStudents() {
         int n = getPositiveIntInput("Enter number of students to add: ");
@@ -197,47 +198,77 @@ public class Admin {
                 daoo.AddStudent(new Modelss(sname, sNum));
                 System.out.println("Student added successfully!");
             } catch (SQLException e) {
-//                System.out.println("Error saving student: " + e.getMessage());
+                System.out.println("Error saving student: " + e.getMessage());
             }
         }
     }
+
 
     private void retrieveStudents() {
         try {
             List<StudentModel> students = daoo.getAllStudent();
-            if (students.isEmpty()) {
-                System.out.println("No students found.");
-            } else {
-                System.out.println("\nStudent List:");
-                students.forEach(std -> System.out.println(
-                        std.getsId() + " | " + std.getsName() + " | " +
-                                std.getsNum() + " | " + std.getsAssignment())
-                );
+
+            System.out.println("\n📋 STUDENT ASSIGNMENT STATUS");
+            System.out.println("----------------------------------------------------");
+            System.out.printf("%-5s %-20s %-15s %-15s%n", "ID", "Name", "Contact", "Assignment Status");
+            System.out.println("----------------------------------------------------");
+
+            for (StudentModel student : students) {
+                String statusIcon = switch (student.getsAssignment()) {
+                    case "Completed" -> "✅";
+                    case "In Progress" -> "⏳";
+                    case "Not Started" -> "🛑";
+                    default -> "❓";
+                };
+
+                System.out.printf("%-5d %-20s %-15s %-2s %-13s%n",
+                        student.getsId(),
+                        student.getsName(),
+                        student.getsNum(),
+                        statusIcon,
+                        student.getsAssignment());
             }
         } catch (SQLException e) {
-            System.out.println("Error retrieving students: " + e.getMessage());
+            System.out.println("\n❌ Error retrieving students: " + e.getMessage());
         }
     }
 
 
-    private void findStudent() {
-        System.out.println("Entre the name of Student to Search :");
+    private void searchStudent() {
+        System.out.print("\n🔍 Enter student name to search: ");
         String name = sc.nextLine().trim();
 
         try {
-            if (!findStudentByName(name)) {
-                System.out.println("No students found with name: " + name);
+            List<StudentModel> results = daoo.findStudentByName(name);
+
+            if (results.isEmpty()) {
+                System.out.println("\nℹ️ No students found with name: " + name);
             } else {
-                findStudentByName(name);
+                System.out.println("\n🔎 SEARCH RESULTS");
+                System.out.println("------------------------------------------------");
+                System.out.printf("%-5s %-20s %-15s %-30s%n", "ID", "Name", "Contact", "Assignment");
+                System.out.println("------------------------------------------------");
+
+                results.forEach(student ->
+                        System.out.printf("%-5d %-20s %-15s %-30s%n",
+                                student.getsId(),
+                                student.getsName(),
+                                student.getsNum(),
+                                truncate(student.getsAssignment(), 30))
+                );
             }
         } catch (SQLException e) {
-            System.out.println("Error searching students: " + e.getMessage());
+            System.out.println("\n❌ Error searching students: " + e.getMessage());
         }
-        // For student search
     }
 
 
     // Utility methods for input handling
+
+    private String truncate(String str, int length) {
+        return str.length() > length ? str.substring(0, length - 3) + "..." : str;
+    }
+
     private int parseIntInput(String prompt) {
         while (true) {
             try {
@@ -269,4 +300,6 @@ public class Admin {
             System.out.println("Invalid contact! Must be at least 10 characters.");
         }
     }
+
+
 }
